@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(express.json());
@@ -12,7 +12,7 @@ const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '');
 
 const SYSTEM_INSTRUCTION = `
 Eres la asistente virtual amable, profesional y servicial de "Jardín Gareba", un jardín de eventos ubicado en Venta de Guadalupe, Hidalgo.
@@ -94,15 +94,12 @@ app.post('/webhook', async (req, res) => {
 
 async function generateGeminiResponse(userText) {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: userText,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.7,
-      },
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction: SYSTEM_INSTRUCTION
     });
-    return response.text;
+    const result = await model.generateContent(userText);
+    return result.response.text();
   } catch (err) {
     console.error('❌ Error consultando Gemini:', err.message);
     return 'Hola, en este momento tenemos una pequeña interrupción técnica. En breve un asesor te responderá directamente. ¡Gracias por comunicarte a Jardín Gareba!';
